@@ -1,5 +1,6 @@
-from conexao_bd.mySQL_queries import MySQLQueries
+from conexao_bd.mongoDB_queries import MongoDBQueries
 from entidades.alunos import Alunos
+import pandas as pd
 
 
 class ControleAlunos:
@@ -209,9 +210,9 @@ class ControleAlunos:
         else:
             print("A matrícula passada não está cadastrada no sistema")
 
-    def pesquisar_matricula(self, matricula:int):
+    def pesquisar_matricula(self, matricula:int) -> bool:
         """
-        Método 'pesquisar_matricula' - Responsável por pesquisar, na tabela 'Alunos', uma matrícula passada para confirmar se já foi cadastrada
+        Método 'pesquisar_matricula' - Responsável por pesquisar, na colecao 'Alunos', uma matrícula passada para confirmar se já foi cadastrada
         Parâmetros:
         matricula - Matricula que se deseja confirmar se está cadastrada no banco de dados
         Retorno:
@@ -219,38 +220,34 @@ class ControleAlunos:
         False - Caso a matricula passada não foi encontrada e não está cadastrada
         """
 
-        #Realiza conexão com o banco de dados
-        conexao_verificacao: MySQLQueries = MySQLQueries()
+        #Realiza conexao com o banco de dados
+        conexao_verificacao: MongoDBQueries = MongoDBQueries()
         conexao_verificacao.connect()
-        query_verificacao = f'select * from ALUNOS where matricula = {matricula}'
+        
+        #Realiza a pesquisa pela matrícula na colecao 'Alunos', guardando o resultado no DataFrame
+        df_resultado: pd.DataFrame = pd.DataFrame(conexao_verificacao.db["ALUNOS"].find({"matricula":f"{matricula}"}, {"matricula":1, "nome":1, "email":1, "_id":0}))
 
-        #Realiza a pesquisa pela matrícula na tabela 'Alunos', guardando o resultado no DataFrame
-        df_resultado = conexao_verificacao.execute_query_dataframe(query_verificacao)
+        #Fecha a conexao com o banco de dados
+        conexao_verificacao.close()
 
-        #Realiza a contagem de registros no DataFrame, retornando False se não tiver registros, True caso contrário
-        if len(df_resultado.index) == 0:
-            return False
-        else:
-            return True
+        #Retorna se o DataFrame esta vazio
+        return df_resultado.empty
 
     def pesquisar_matricula_emprestimo(self, matricula:int):
         """
-        Método pesquisar_matricula_emprestimo - Responsável por realizar uma busca da matricula passada nos registros da tabela 'Emprestimos'
+        Método pesquisar_matricula_emprestimo - Responsável por realizar uma busca da matricula passada nos documentos da colecao 'Emprestimos'
         Parâmetros:
-        matricula - Matricula que se deseja confirmar a presença nos registros da tabela 'Emprestimos'
-        Retorno: Retorna um DataFrame da biblioteca pandas contendo os registros em que a matricula está presente
+        matricula - Matricula que se deseja confirmar a presença nos registros da colecao 'Emprestimos'
+        Retorno: Retorna um DataFrame da biblioteca pandas contendo os documentos em que a matricula está presente
         """
         
         #Realiza conexão com o banco de dados
-        conexao_verificacao: MySQLQueries = MySQLQueries()
+        conexao_verificacao: MongoDBQueries = MongoDBQueries()
         conexao_verificacao.connect()
 
-        #Guarda em uma variavel a query a ser realizada
-        query_verificacao = (f"select codigo as 'Codigo Emprestimo', codigo_livro as 'ID livro'," 
-        + f"codigo_aluno as 'Matricula Aluno', data_devolucao as 'Data de Devolucao'from EMPRESTIMOS where codigo_aluno = {matricula}")
-
-        #Guarda o resultado da query em um DataFrame e retorna esse data frame
-        df_resultado = conexao_verificacao.execute_query_dataframe(query_verificacao)
+        #Realiza uma pesquisa na colecao EMPRESTIMOS buscando os documentos com a matricula passada como parametro
+        #Guarda o resultado da pesquisa em um DataFrame
+        df_resultado = conexao_verificacao.db["EMPRESTIMOS"].find({"codigo_aluno":f"{matricula}"}, {"Codigo Emprestimo": "$codigo", "ID livro":"$codigo_livro", "Matricula Aluna":"$codigo_aluno", "Data de Devolucao":"data_devolucao", "_id": 0})
         return df_resultado
 
     def listar_alunos(self):
