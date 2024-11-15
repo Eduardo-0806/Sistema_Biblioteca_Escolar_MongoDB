@@ -9,7 +9,7 @@ class MySQLQueries:
         self.can_write: bool = can_write
         self.host = 'localhost'
         
-        with open("conexao_bd\\autenticador\\autenticador_mySQL.txt") as f:
+        with open("conexao_bd/autenticador/autenticador_mySQL.txt") as f:
             self.database, self.user, self.password = f.read().split(',')
     
     def __del__(self):
