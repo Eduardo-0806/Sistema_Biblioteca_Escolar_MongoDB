@@ -12,12 +12,12 @@ class ControleAlunos:
 
     def cadastrar_aluno(self) -> Alunos:
         """
-        Método 'cadastrar_aluno' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo registro da tabela 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
-        Retorno: Retorna um objeto da classe Alunos com os dados do registro cadastrado 
+        Método 'cadastrar_aluno' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo documento da colecao 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Retorno: Retorna um objeto da classe Alunos com os dados do documento cadastrado 
         """
         
         #Cria uma nova conexão
-        conexao_cadastro: MySQLQueries = MySQLQueries(True)
+        conexao_cadastro: MongoDBQueries = MongoDBQueries()
         conexao_cadastro.connect()
         
         #Solicita ao usuário a matrícula do aluno a ser cadastrado
@@ -38,7 +38,7 @@ class ControleAlunos:
         matricula: int = int(matricula_teste)
 
         #Verifica se a matricula passada já não está cadastrada no sistema
-        if (not self.pesquisar_matricula(matricula)):
+        if (self.pesquisar_matricula(matricula)):
 
             #Solicita ao usuário o nome do aluno
             nome:str = input("Digite o nome do aluno (Sem acento): ").strip()
@@ -56,11 +56,11 @@ class ControleAlunos:
                 print("Erro no email passado")
                 email = input("Digite um email válido para ser cadastrado(Sem resposta vazia): ")
             
-            #Realiza a inserção do aluno na tabela ALUNOS através do comando SQL
-            conexao_cadastro.write(f"insert into ALUNOS values({matricula},'{nome}','{email}');")
+            #Realiza a inserção do aluno na colecao ALUNOS através de comando NoSQL
+            conexao_cadastro.db["ALUNOS"].insert_one({"matricula": matricula, "nome": f"{nome}", "email": f"{email}" })
 
-            #Salva os dados do aluno cadastrado em um DataFrame da biblioteca Bandas
-            df_resultado = conexao_cadastro.execute_query_dataframe(f"select * from ALUNOS where matricula = {matricula}")
+            #Salva os dados do aluno cadastrado em um DataFrame da biblioteca Pandas
+            df_resultado = pd.DataFrame(conexao_cadastro.db["ALUNOS"].find({"matricula": matricula}))
 
             #Salva os dados do aluno em um objeto da classe Aluno
             aluno = Alunos(df_resultado.matricula.values[0], df_resultado.nome.values[0],df_resultado.email.values[0])
@@ -79,11 +79,11 @@ class ControleAlunos:
 
     def alterar_aluno(self) -> Alunos:
         """
-        Método 'alterar_aluno' - Responsável por realizar o processo de atualização dos dados de um registro da tabela 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
-        Retorno: Retorna um objeto da classe Alunos com os dados do registro atualizado 
+        Método 'alterar_aluno' - Responsável por realizar o processo de atualização dos dados de um documento da colecao 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Retorno: Retorna um objeto da classe Alunos com os dados do documento atualizado 
         """      
         #Cria uma nova conexão
-        conexao_atualizacao = MySQLQueries(True)
+        conexao_atualizacao: MongoDBQueries = MongoDBQueries()
         conexao_atualizacao.connect()
 
         #Exibe os alunos cadastrados na tabela 'Alunos'
@@ -102,7 +102,7 @@ class ControleAlunos:
         matricula: int = int(matricula_teste)
 
         #Verifica se a matricula passada já está cadastrada no sistema
-        if (self.pesquisar_matricula(matricula)):
+        if (not self.pesquisar_matricula(matricula)):
 
             #Solicita ao usuário o novo nome do aluno
             nome_novo:str = input("Digite o novo nome a ser registrado (Sem acento): ").strip()
@@ -120,13 +120,13 @@ class ControleAlunos:
                 print("Erro no email passado")
                 email_novo = input("Digite um novo email válido para ser registrado(Sem resposta vazia): ")
 
-            #Realiza a atualização dos dados do aluno na tabela ALUNOS através do comando SQL
-            conexao_atualizacao.write(f"update ALUNOS set nome = '{nome_novo}', email = '{email_novo}' where matricula = {matricula};")
+            #Realiza a atualização dos dados do aluno na colecao ALUNOS através de comando NoSQL
+            conexao_atualizacao.db["ALUNOS"].update_many({"matricula": matricula}, {"$set": {"nome": f"{nome_novo}", "email": f"{email_novo}"}})
 
-            #Salva os dados atualizado do aluno em um DataFrame da biblioteca Bandas
-            df_resultado = conexao_atualizacao.execute_query_dataframe(f"select * from ALUNOS where matricula = {matricula}")
+            #Salva os dados atualizado do aluno em um DataFrame da biblioteca Pandas
+            df_resultado = pd.DataFrame(conexao_atualizacao.db["ALUNOS"].find({"matricula": matricula}))
 
-            #Salva os dados do aluno em um objeto da classe Aluno
+            #Salva os dados do aluno em um objeto da classe Alunos
             aluno_atualizado = Alunos(df_resultado.matricula.values[0], df_resultado.nome.values[0],df_resultado.email.values[0])
 
             #Sinaliza ao usuário o sucesso da operação, retornando também os dados do registro atualizado
@@ -144,10 +144,10 @@ class ControleAlunos:
 
     def excluir_aluno(self):
         """
-        Método 'excluir_aluno' - Responsável por realizar o processo de exclusão de um registro da tabela 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido 
+        Método 'excluir_aluno' - Responsável por realizar o processo de exclusão de um documento da colecao 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido 
         """  
         #Cria uma nova conexão
-        conexao_exclusao = MySQLQueries(True)
+        conexao_exclusao:MongoDBQueries = MongoDBQueries()
         conexao_exclusao.connect()
 
         #Exibe os alunos cadastrados na tabela 'Alunos'
@@ -166,7 +166,7 @@ class ControleAlunos:
         matricula: int = int(matricula_teste)
 
         #Verifica se a matricula passada já está cadastrada no sistema
-        if (self.pesquisar_matricula(matricula)):
+        if (not self.pesquisar_matricula(matricula)):
 
             #Guarda em um DataFrame o resultado do método pesquisar_matricula_emprestimo()
             df_matricula_emprestimos = self.pesquisar_matricula_emprestimo(matricula)
@@ -182,7 +182,7 @@ class ControleAlunos:
             else:
                 
                 #Caso não esteja, procede para sua exclusão guardando seus dados em um data frame
-                df_matricula_excluida = conexao_exclusao.execute_query_dataframe(f"select * from ALUNOS where matricula = {matricula}")
+                df_matricula_excluida = pd.DataFrame(conexao_exclusao.db["ALUNOS"].find({"matricula": matricula}))
 
                 #Cria um objeto da classe Alunos com dados do registro a ser excluído
                 aluno_excluido: Alunos = Alunos(df_matricula_excluida.matricula.values[0], 
@@ -200,9 +200,10 @@ class ControleAlunos:
 
                 if(exclusao == "S"):
                     
-                    #Realiza a exclusão do registro, sinalizando ao usuário o sucesso da operação
-                    conexao_exclusao.write(f"delete from ALUNOS where matricula = {matricula}")
+                    #Realiza a exclusão do documento, sinalizando ao usuário o sucesso da operação
+                    conexao_exclusao.db["ALUNOS"].delete_many({"matricula": matricula})
                     print("Aluno excluido com sucesso")
+
                 else:
                     print("Exclusão cancelada")
 
@@ -216,8 +217,8 @@ class ControleAlunos:
         Parâmetros:
         matricula - Matricula que se deseja confirmar se está cadastrada no banco de dados
         Retorno:
-        True - Caso a matricula passada foi encontrada e está cadastrada
-        False - Caso a matricula passada não foi encontrada e não está cadastrada
+        True - Caso a matricula passada nao foi encontrada e está cadastrada
+        False - Caso a matricula passada foi encontrada e não está cadastrada
         """
 
         #Realiza conexao com o banco de dados
@@ -225,7 +226,7 @@ class ControleAlunos:
         conexao_verificacao.connect()
         
         #Realiza a pesquisa pela matrícula na colecao 'Alunos', guardando o resultado no DataFrame
-        df_resultado: pd.DataFrame = pd.DataFrame(conexao_verificacao.db["ALUNOS"].find({"matricula":f"{matricula}"}, {"matricula":1, "nome":1, "email":1, "_id":0}))
+        df_resultado: pd.DataFrame = pd.DataFrame(conexao_verificacao.db["ALUNOS"].find({"matricula": matricula}, {"matricula":1, "nome":1, "email":1, "_id":0}))
 
         #Fecha a conexao com o banco de dados
         conexao_verificacao.close()
@@ -247,21 +248,23 @@ class ControleAlunos:
 
         #Realiza uma pesquisa na colecao EMPRESTIMOS buscando os documentos com a matricula passada como parametro
         #Guarda o resultado da pesquisa em um DataFrame
-        df_resultado = conexao_verificacao.db["EMPRESTIMOS"].find({"codigo_aluno":f"{matricula}"}, {"Codigo Emprestimo": "$codigo", "ID livro":"$codigo_livro", "Matricula Aluna":"$codigo_aluno", "Data de Devolucao":"data_devolucao", "_id": 0})
+        df_resultado = pd.DataFrame(conexao_verificacao.db["EMPRESTIMOS"].find({"codigo_aluno": matricula}, {"Codigo Emprestimo": "$codigo", "ID livro":"$codigo_livro", "Matricula Aluna":"$codigo_aluno", "Data de Devolucao":"$data_devolucao", "_id": 0}))
+
+        #Retorna o DataFrame
         return df_resultado
 
     def listar_alunos(self):
         """
-        Método listar_alunos - Responsável por realizar a listagem dos alunos cadastrados na tabela 'Alunos'
+        Método listar_alunos - Responsável por realizar a listagem dos alunos cadastrados na colecao 'Alunos'
         Retorno: Retorna um DataFrame da biblioteca pandas contendo os alunos cadastrados
         """
         #Realiza conexão com o banco de dados
-        conexao_listagem: MySQLQueries = MySQLQueries()
+        conexao_listagem: MongoDBQueries = MongoDBQueries()
         conexao_listagem.connect()
 
-        #Armazena em uma variável o código SQL para listar os alunos cadastrados
-        query_verificacao = ("select matricula as 'Matricula do Aluno', nome as 'Nome Aluno', email as 'Email Aluno'" + "from ALUNOS order by nome;")
+        #Realiza a pesquisa pelos alunos cadastrados e guarda o resultado em um DataFrame Pandas
+        df_listagem = pd.DataFrame(conexao_listagem.db["ALUNOS"].find({}, {"Matricula do Aluno": "$matricula", "Nome Aluno": "$nome", "Email Aluno": "$email", "_id": 0}).sort({"nome": 1}))
         
         #Retorna um DataFrame contendo a listagem dos alunos cadastrados
-        return conexao_listagem.execute_query_dataframe(query_verificacao)
+        return df_listagem
 

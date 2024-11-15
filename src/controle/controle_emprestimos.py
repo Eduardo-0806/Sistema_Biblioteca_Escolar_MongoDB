@@ -1,4 +1,4 @@
-from conexao_bd.mySQL_queries import MySQLQueries
+from conexao_bd.mongoDB_queries import MongoDBQueries
 from entidades.emprestimos import Emprestimos
 from controle.controle_alunos import ControleAlunos
 from controle.controle_livros import ControleLivros
@@ -6,6 +6,7 @@ from entidades.alunos import Alunos
 from entidades.livros import Livros
 from datetime import date
 from datetime import timedelta
+import pandas as pd
 
 
 class ControleEmprestimos:
@@ -19,11 +20,11 @@ class ControleEmprestimos:
     
     def cadastrar_emprestimo(self) -> Emprestimos:
         """
-        Método 'cadastrar_emprestimo' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo registro da tabela 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
-        Retorno: Retorna um objeto da classe Emprestimo com os dados do registro criado 
+        Método 'cadastrar_emprestimo' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo documento na colecao 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Retorno: Retorna um objeto da classe Emprestimo com os dados do documento criado 
         """
         #Cria uma nova conexão
-        conexao_inserir = MySQLQueries(True)
+        conexao_inserir = MongoDBQueries()
         conexao_inserir.connect()
 
         #Solicita ao usuário o código do emprestimo a ser cadastrado
@@ -38,7 +39,7 @@ class ControleEmprestimos:
         codigo: int = int(codigo_teste)
 
         #Verifica se o código passado já não está cadastrado no sistema
-        if (not self.pesquisar_codigo(codigo)):
+        if (self.pesquisar_codigo(codigo)):
 
             #Cria uma variavel flag para controlar o preenchimento do campos
             flag: bool = False
@@ -59,7 +60,7 @@ class ControleEmprestimos:
                     codigo_livro_teste: str = input("Insira um código válido(Somente números): ").strip()
                 
                 #Guarda o resultado do método pesquisar_id na variável flag
-                flag = self.controlador_livros.pesquisar_id(int(codigo_livro_teste))
+                flag = not self.controlador_livros.pesquisar_id(int(codigo_livro_teste))
                 if (not flag):
 
                     #Informa ao usuário se o código passado não está cadastrado no sistema
@@ -99,7 +100,7 @@ class ControleEmprestimos:
                     codigo_aluno_teste: str = input("Insira uma matrícula válida(Somente números): ").strip()
                 
                 #Guarda o resultado do método pesquisar_matricula na variável flag
-                flag = self.controlador_alunos.pesquisar_matricula(int(codigo_aluno_teste))
+                flag = not self.controlador_alunos.pesquisar_matricula(int(codigo_aluno_teste))
                 if (not flag):
 
                     #Informa ao usuário se o código passado não está cadastrado no sistema
@@ -130,15 +131,19 @@ class ControleEmprestimos:
             #Cria a data de devolução do emprestimo
             data_devolucao: date = date.today() + timedelta(days=14)
 
-
-            #Realiza a inserção do emprestimo na tabela 'Emprestimos' através de código SQL
-            conexao_inserir.write(f"insert into EMPRESTIMOS values({codigo}, {codigo_livro}, {codigo_aluno}, '{data_devolucao}');")
-
+            #Realiza a inserção do emprestimo na tabela 'Emprestimos' através de código noSQL
+            conexao_inserir.db["EMPRESTIMOS"].insert_one({"codigo": codigo, "codigo_livro": codigo_livro, 
+            "codigo_aluno": codigo_aluno, "data_devolucao": data_devolucao.strftime("%Y-%m-%d")})
+        
             #Guarda em uma variável DataFrame os campos do registro do emprestimo
-            df_resultado = conexao_inserir.execute_query_dataframe(f"select * from EMPRESTIMOS where codigo = {codigo};")
+            df_resultado = pd.DataFrame(conexao_inserir.db["EMPRESTIMOS"].find({"codigo": codigo}))
+
+            #Extrai as informacoes da data de devolucao e cria um objeto date baseade nelas
+            elementos_data: list = df_resultado.data_devolucao.values[0].split("-")
+            data = date(int(elementos_data[0]), int(elementos_data[1]), int(elementos_data[2]))
 
             #Cria um objeto da classe Emprestimos com os dados do emprestimos
-            emprestimo: Emprestimos = Emprestimos(df_resultado.codigo.values[0], livro, aluno, df_resultado.data_devolucao.values[0])
+            emprestimo: Emprestimos = Emprestimos(df_resultado.codigo.values[0], livro, aluno, data)
             print("Emprestimo cadastrado com sucesso")
 
             #Exibe na tela os dados do objeto emprestimo
@@ -154,12 +159,12 @@ class ControleEmprestimos:
 
     def alterar_emprestimo(self) -> Emprestimos:
         """
-        Método 'alterar_emprestimo' - Responsável por realizar o processo de atualização dos dados de um registro da tabela 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
-        Retorno: Retorna um objeto da classe Emprestimos com os dados do registro atualizado 
+        Método 'alterar_emprestimo' - Responsável por realizar o processo de atualização dos dados de um documento da colecao 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Retorno: Retorna um objeto da classe Emprestimos com os dados do documento atualizado 
         """  
 
         #Cria uma nova conexão
-        conexao_alteracao = MySQLQueries(True)
+        conexao_alteracao = MongoDBQueries()
         conexao_alteracao.connect()
 
         #Exibe para o usuário os emprestimos cadastrados na tabela 'Emprestimos'
@@ -178,7 +183,7 @@ class ControleEmprestimos:
         codigo: int = int(codigo_teste)
 
         #Verifica se o codigo passado já está cadastrado na tabela 'Emprestimos'
-        if (self.pesquisar_codigo(codigo)):
+        if (not self.pesquisar_codigo(codigo)):
 
             #Cria uma variavel flag para controlar o preenchimento do campos
             flag: bool = False
@@ -199,7 +204,7 @@ class ControleEmprestimos:
                     codigo_livro_novo_teste: str = input("Insira um novo código válido(Somente números): ").strip()
                 
                 #Guarda o resultado do método pesquisar_id na variável flag
-                flag = self.controlador_livros.pesquisar_id(int(codigo_livro_novo_teste))
+                flag = not self.controlador_livros.pesquisar_id(int(codigo_livro_novo_teste))
                 
                 #Informa ao usuário se o codigo passado não estiver cadastrado na tabela 'Livros'
                 if (not flag):
@@ -238,7 +243,7 @@ class ControleEmprestimos:
                     codigo_aluno_novo_teste: str = input("Insira uma nova matrícula válida(Somente números): ").strip()
                 
                 #Guarda na variável flag o resultado do método pesquisar_matricula
-                flag = self.controlador_alunos.pesquisar_matricula(int(codigo_aluno_novo_teste))
+                flag = not self.controlador_alunos.pesquisar_matricula(int(codigo_aluno_novo_teste))
 
                 #Informa ao usuário se a matrícula não estiver cadastrada na tabela 'Alunos'
                 if (not flag):
@@ -269,16 +274,22 @@ class ControleEmprestimos:
             #Cria a data de devolução do emprestimo
             data_devolucao_nova: date = date.today() + timedelta(days=14)
 
-            #Realiza a alteração dos campos do registro desejado através de comando SQL
-            conexao_alteracao.write(f"update EMPRESTIMOS set codigo_livro = {codigo_livro_novo}, codigo_aluno = {codigo_aluno_novo}, data_devolucao = '{data_devolucao_nova}' where codigo = {codigo};")
+            #Realiza a alteração dos campos do documento desejado através de comando noSQL
+            conexao_alteracao.db["EMPRESTIMOS"].update_one({"codigo": codigo}, {"$set": 
+            {"codigo_livro": codigo_livro_novo, "codigo_aluno": codigo_aluno_novo, 
+            "data_devolucao": data_devolucao_nova.strftime("%Y-%m-%d")}})
+            
+            #Guarda os campos do documento alterado em um DataFrame
+            df_resultado = pd.DataFrame(conexao_alteracao.db["EMPRESTIMOS"].find({"codigo": codigo}))
 
-            #Guarda os campos do registro alterado em um DataFrame
-            df_resultado = conexao_alteracao.execute_query_dataframe(f"select * from EMPRESTIMOS where codigo = {codigo};")
+            #Retira oas informacoes da data da devolucao e cria um objeto da classe date com essas informacoes
+            elementos_data: list = df_resultado.data_devolucao.values[0].split("-")
+            data_nova: date = date(int(elementos_data[0]), int(elementos_data[1]), int(elementos_data[2]))
+            
+            #Cria um objeto da classe Emprestimos para guardar os dados do documento
+            emprestimo = Emprestimos(df_resultado.codigo.values[0], livro_novo, aluno_novo, data_nova)
 
-            #Cria um objeto da classe Emprestimos para guardar os dados do registro
-            emprestimo = Emprestimos(df_resultado.codigo.values[0], livro_novo, aluno_novo, df_resultado.data_devolucao.values[0])
-
-            #Informa ao usuário o sucesso em atualizar os dados do registro, exibindo esses dados
+            #Informa ao usuário o sucesso em atualizar os dados do documento, exibindo esses dados
             print("Registro de emprestimo alterado com sucesso")
             print(emprestimo)
 
@@ -293,14 +304,14 @@ class ControleEmprestimos:
 
     def excluir_emprestimo(self):
         """
-        Método 'excluir_emprestimo' - Responsável por realizar o processo de exclusão de um registro da tabela 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido 
+        Método 'excluir_emprestimo' - Responsável por realizar o processo de exclusão de um documento da colecao 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido 
         """  
 
         #Cria uma nova conexão
-        conexao_exclusao = MySQLQueries(True)
+        conexao_exclusao = MongoDBQueries()
         conexao_exclusao.connect()
 
-        #Exibe para o usuário os emprestimos cadastrados na tabela 'Emprestimos'
+        #Exibe para o usuário os emprestimos cadastrados na colecao 'Emprestimos'
         print("EMPRESTIMOS CADASTRADOS")
         print(self.listar_emprestimos())
 
@@ -316,18 +327,21 @@ class ControleEmprestimos:
         codigo: int = int(codigo_teste)
 
         #Verifica se o código passado está cadastrado na tabela 'Emprestimos'
-        if (self.pesquisar_codigo(codigo)):
+        if (not self.pesquisar_codigo(codigo)):
 
-                #Guarda em um DataFrame os campos do registro a ser excluído
-                df_codigo_excluido = conexao_exclusao.execute_query_dataframe(f"select * from EMPRESTIMOS where codigo = {codigo}")
-
-                #Cria respectivamente objetos da classe Livros e Alunos
+                #Guarda em um DataFrame os campos do documento a ser excluído
+                df_codigo_excluido = pd.DataFrame(conexao_exclusao.db["EMPRESTIMOS"].find({"codigo": codigo}))
+                print(df_codigo_excluido.codigo_livro.values[0])
+                #Cria respectivamente objetos da classe Livros, Alunos e date
                 livro: Livros = self.criar_livro(df_codigo_excluido.codigo_livro.values[0])
                 aluno: Alunos = self.criar_aluno(df_codigo_excluido.codigo_aluno.values[0])
+                elementos_data: list = df_codigo_excluido.data_devolucao.values[0].split("-")
+                data: date = date(int(elementos_data[0]), int(elementos_data[1]), int(elementos_data[2]))
 
-                #Guarda em um objeto da classe Emprestimos os dados do registro a ser excluído
-                emprestimo_excluido: Emprestimos = Emprestimos(df_codigo_excluido.codigo.values[0], livro, aluno, df_codigo_excluido.data_devolucao.values[0])
+                #Guarda em um objeto da classe Emprestimos os dados do regdcoumentoistro a ser excluído
+                emprestimo_excluido: Emprestimos = Emprestimos(df_codigo_excluido.codigo.values[0], livro, aluno, data)
                 print(emprestimo_excluido)
+
                 #Solicita ao usuário a confirmação para exclusão
                 exclusao:str = input("Deseja excluir esse registro do Emprestimo(S/N)? ").upper()
 
@@ -336,11 +350,11 @@ class ControleEmprestimos:
                     exclusao:str = input("Digite uma resposta válida(S/N): ").upper()
 
                 if (exclusao == "S"):
-
+                    
                     #Realiza a exclusão do registro por meio de comando SQL
-                    conexao_exclusao.write(f"delete from EMPRESTIMOS where codigo = {codigo}")
+                    conexao_exclusao.db["EMPRESTIMOS"].delete_one({"codigo": codigo})
 
-                    #Informa ao usuário o sucesso na operação, exibindo os dados do registro excluído
+                    #Informa ao usuário o sucesso na operação,
                     print("Emprestimo excluido com sucesso")
                 else:
                     print("Exclusão cancelada")
@@ -351,27 +365,23 @@ class ControleEmprestimos:
 
     def pesquisar_codigo(self, codigo:int) -> bool:
         """
-        Método 'pesquisar_codigo' - Responsável por pesquisar, na tabela 'Emprestimos', um codigo passado para confirmar se já foi cadastrado
+        Método 'pesquisar_codigo' - Responsável por pesquisar, na colecao 'Emprestimos', um codigo passado para confirmar se já foi cadastrado
         Parâmetros:
         codigo - Código que se deseja confirmar se está cadastrado no banco de dados
         Retorno:
-        True - Caso o codigo passado foi encontrado e está cadastrado
-        False - Caso o codigo passado não foi encontrado e não está cadastrado
+        True - Caso o codigo passado nao foi encontrado e nao está cadastrado
+        False - Caso o codigo passado foi encontrado e está cadastrado
         """
         
         #Realiza conexão com o banco de dados
-        conexao_verificacao: MySQLQueries = MySQLQueries()
+        conexao_verificacao: MongoDBQueries = MongoDBQueries()
         conexao_verificacao.connect()
-        query_verificacao = f"select * from EMPRESTIMOS where codigo = {codigo}"
 
-        #Realiza a pesquisa pelo codigo na tabela 'Emprestimos', guardando o resultado em um DataFrame
-        resultado = conexao_verificacao.execute_query_dataframe(query_verificacao)
+        #Realiza a pesquisa pelo codigo na colecao 'Emprestimos', guardando o resultado em um DataFrame
+        resultado = pd.DataFrame(conexao_verificacao.db["EMPRESTIMOS"].find({"codigo": codigo}))
     
-        #Realiza a contagem de registros no DataFrame, retornando False se não tiver registros, True caso contrário
-        if len(resultado.index) == 0:
-            return False
-        else:
-            return True
+        #Retorna se o DataFrame gerado pela pesquisa esta vazio
+        return resultado.empty
     
 
     def pesquisar_disponibilidade(self, codigo:int) -> bool:
@@ -385,41 +395,36 @@ class ControleEmprestimos:
         """
         
         #Realiza conexão com o banco de dados
-        conexao_verificacao: MySQLQueries = MySQLQueries()
+        conexao_verificacao: MongoDBQueries = MongoDBQueries()
         conexao_verificacao.connect()
 
-
-        query_verificacao_emprestimos: str = f"select count(codigo_livro) as qtd from EMPRESTIMOS where codigo_livro = {codigo}"
-
-        #Realiza a pesquisa da quantidade de participação do código na tabela 'Emprestimos', guardando a quantidade em uma variável
-        quantidade_emprestada: int = conexao_verificacao.execute_query_dataframe(query_verificacao_emprestimos)["qtd"].values[0]
-
-        query_verificacao_acervo: str = f"select quantidade_exemplares as acervo from LIVROS where id = {codigo}"
-
-        #Realiza a pesquisa pela quantidade de exemplares do codigo na tabela 'Livros', guardando a quantidade em variável
-        quantidade_disponível: int = conexao_verificacao.execute_query_dataframe(query_verificacao_acervo)["acervo"].values[0]
-
+        #Realiza a pesquisa da quantidade de participação do código na colecao 'Emprestimos', guardando a quantidade em uma variável
+        quantidade_emprestada:int = conexao_verificacao.db["EMPRESTIMOS"].count_documents({"codigo_livro": codigo})
+        
+        #Realiza a pesquisa pela quantidade de exemplares do codigo na colecao 'Livros', guardando a quantidade em uma variável
+        df_qtd_diponivel: pd.DataFrame = pd.DataFrame(conexao_verificacao.db["LIVROS"].find({"id": codigo}, 
+        {"quantidade_exemplares": 1, "_id": 0}))
+        quantidade_disponivel: int = df_qtd_diponivel.quantidade_exemplares.values[0]
+        
         #Realiza a comparação entre variáveis, retornando False se não houver mais exemplares disponíveis, True caso contrário
-        if (quantidade_emprestada >= quantidade_disponível):
+        if (quantidade_emprestada >= quantidade_disponivel):
             return False
         else:
             return True
 
     def criar_aluno(self, matricula: int) -> Alunos:
         """
-        Método 'criar_aluno' - Responsável por criar um objeto da classe Alunos a partir de uma matrícula já cadastrada na tabela 'Alunos'
+        Método 'criar_aluno' - Responsável por criar um objeto da colecao Alunos a partir de uma matrícula já cadastrada na colecao 'Alunos'
         Parâmetros:
         matricula - Matricula do aluno que se deseja transformar em objeto
         Retorno: Um objeto da classe Aluno com os dados do registro onde a matricula passada está inserida
         """
         #Realiza conexão com o banco de dados
-        conexao_criacao: MySQLQueries = MySQLQueries()
+        conexao_criacao: MongoDBQueries = MongoDBQueries()
         conexao_criacao.connect()
 
-        query = f'select * from ALUNOS where matricula = {matricula}'
-
-        #Realiza a pesquisa pela matrícula na tabela 'Alunos', guardando o resultado no DataFrame
-        df_resultado = conexao_criacao.execute_query_dataframe(query)
+        #Realiza a pesquisa pela matrícula na colecao 'Alunos', guardando o resultado no DataFrame
+        df_resultado = pd.DataFrame(conexao_criacao.db["ALUNOS"].find({"matricula": int(matricula)}))
 
         #Salva os dados do aluno em um objeto da classe Alunos
         aluno = Alunos(df_resultado.matricula.values[0], df_resultado.nome.values[0],df_resultado.email.values[0])
@@ -429,21 +434,19 @@ class ControleEmprestimos:
 
     def criar_livro(self, id: int) -> Livros:
         """
-        Método 'criar_livro' - Responsável por criar um objeto da classe Livros a partir de um ID já cadastrado na tabela 'Alunos'
+        Método 'criar_livro' - Responsavel por criar um objeto da classe Livros a partir de um ID já cadastrado na colecao 'Alunos'
         Parâmetros:
         id - ID do livro que se deseja transformar em objeto
-        Retorno: Um objeto da classe Livros com os dados do registro onde o ID passado está inserido
+        Retorno: Um objeto da classe Livros com os dados do documento onde o ID passado está inserido
         """
         #Realiza conexão com o banco de dados
-        conexao_criacao: MySQLQueries = MySQLQueries()
+        conexao_criacao: MongoDBQueries = MongoDBQueries()
         conexao_criacao.connect()
 
-        query = f'select * from LIVROS where id = {id}'
+        #Realiza a pesquisa pelo ID na colecao 'Livros', guardando o resultado no DataFrame
+        df_resultado = pd.DataFrame(conexao_criacao.db["LIVROS"].find({"id": int(id)}))
 
-        #Realiza a pesquisa pelo ID na tabela 'Livros', guardando o resultado no DataFrame
-        df_resultado = conexao_criacao.execute_query_dataframe(query)
-
-        #Salva os dados do livro em um objeto da classe Livros
+        #Salva os dados do livro em um objeto da colecao Livros
         livro: Livros = Livros(df_resultado.id.values[0], df_resultado.nome_obra.values[0],
         df_resultado.autor.values[0], df_resultado.editora_edicao.values[0], df_resultado.numero_edicao.values[0],
         df_resultado.ano_edicao.values[0], df_resultado.quantidade_exemplares.values[0])
@@ -453,29 +456,68 @@ class ControleEmprestimos:
     
     def listar_emprestimos(self):
         """
-        Método listar_emprestimos - Responsável por realizar a listagem dos emprestimos cadastrados na tabela 'Emprestimos'
+        Método listar_emprestimos - Responsável por realizar a listagem dos emprestimos cadastrados na colecao 'Emprestimos'
         Retorno: Retorna um DataFrame da biblioteca pandas contendo os emprestimos cadastrados
         """
 
         #Realiza conexão com o banco de dados
-        conexao_listagem: MySQLQueries = MySQLQueries()
+        conexao_listagem: MongoDBQueries = MongoDBQueries()
         conexao_listagem.connect()
 
-        #Armazena em uma variável o código SQL para listar os emprestimos cadastrados
-        query_verificacao = ("""select e.codigo as 'Codigo Emprestimo',
-                            e.codigo_livro as 'ID Livro',
-                            l.nome_obra as 'Nome da Obra',
-                            l.editora_edicao as 'Editora da Edicao',
-                            l.numero_edicao as 'Numero da Edicao',
-                            e.codigo_aluno as 'Matricula Aluno',
-                            a.nome as 'Nome Aluno',
-                            a.email as 'Email do Aluno',
-                            e.data_devolucao as 'Data de Devolucao'
-                            from EMPRESTIMOS e 
-                            inner join LIVROS l on e.codigo_livro = l.id
-                            inner join ALUNOS a on e.codigo_aluno = a.matricula
-                            order by e.codigo;""")
+        #Realiza a listagem dos emprestimos cadastrados no banco de dados
+        df_listagem: pd.DataFrame = pd.DataFrame(conexao_listagem.db["EMPRESTIMOS"].aggregate([
+    {
+        '$lookup': {
+            'from': 'ALUNOS', 
+            'localField': 'codigo_aluno', 
+            'foreignField': 'matricula', 
+            'as': 'aluno'
+        }
+    }, {
+        '$unwind': {
+            'path': '$aluno'
+        }
+    }, {
+        '$project': {
+            'codigo': 1, 
+            'codigo_livro': 1, 
+            'codigo_aluno': 1, 
+            'nome_aluno': '$aluno.nome', 
+            'email_aluno': '$aluno.email', 
+            'data_devolucao': 1
+        }
+    }, {
+        '$lookup': {
+            'from': 'LIVROS', 
+            'localField': 'codigo_livro', 
+            'foreignField': 'id', 
+            'as': 'livro'
+        }
+    }, {
+        '$unwind': {
+            'path': '$livro'
+        }
+    }, {
+        '$project': {
+            'Codigo Emprestimo': '$codigo', 
+            'ID Livro': '$codigo_livro', 
+            'Nome da Obra': '$livro.nome_obra', 
+            'Editora da Edicao': '$livro.editora_edicao', 
+            'Numero da Edicao': '$livro.numero_edicao', 
+            'Matricula Aluno': '$codigo_aluno', 
+            'Nome Aluno': '$nome_aluno', 
+            'Email do Aluno': '$email_aluno', 
+            'Data de Devolucao': '$data_devolucao',
+            '_id': 0
+        }
+    }, {
+        '$sort': {
+            'Codigo Emprestimo': 1
+        }
+    }
+])
+        )
         
         #Retorna um DataFrame contendo a listagem dos emprestimos cadastrados
-        return conexao_listagem.execute_query_dataframe(query_verificacao)
+        return df_listagem
     

@@ -1,6 +1,6 @@
 class Livros:
     """Classe 'Livros' - Responsável por representar a tabela 'Livros' e seus campos, contendo métodos para editar e retorná-los"""
-    def __init__(self, id:int, nome_obra:str, autor:str, editora_edicao:str, numero_edicao:int,ano_edicao:str, quantidade_exemplares:int):
+    def __init__(self, id:int, nome_obra:str, autor:str, editora_edicao:str, numero_edicao:int,ano_edicao:int, quantidade_exemplares:int):
         self.id = id
         self.nome_obra = nome_obra
         self.autor = autor
@@ -39,10 +39,10 @@ class Livros:
     def set_numero_edicao(self, numero_edicao:int):
         self.numero_edicao = numero_edicao
     
-    def get_ano_edicao(self) -> str:
+    def get_ano_edicao(self) -> int:
         return self.ano_edicao
     
-    def set_ano_edicao(self, ano_edicao:str):
+    def set_ano_edicao(self, ano_edicao:int):
         self.ano_edicao = ano_edicao
 
     def get_quantidade_exemplares(self) -> int:

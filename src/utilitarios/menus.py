@@ -22,8 +22,28 @@ MENU_RELATORIOS = """Relatórios
 6 - Relatório de Emprestimos
 7 - Relatórios de Emprestimos Atrasados"""
 
-#Constante responsável por armazenar o molde da consulta de contagem de registro de uma tabela
-QUERY_COUNT = 'select count(1) as total_{tabela}_registros from {tabela}'
+def query_count(nome_colecao:str):
+    """
+    Funcao query_count - Realiza a contagem de documentos do nome da colecao passada na chamada da funcao
+    Parametros:
+    nome_colecao = Nome da colecao a ser verificada a quantidade de documentos
+    Retorno: Dataframe Pandas contendo a quantidade de documentos da colecao
+    """
+    import pandas as pd
+    from conexao_bd.mongoDB_queries import MongoDBQueries
+
+    #Realiza a conexao ao banco de dados mongoDB
+    conexao_contagem:MongoDBQueries = MongoDBQueries()
+    conexao_contagem.connect()
+
+    #Guarda em uma variavel resultado da contagem dos documentos da colecao passada
+    total_documentos: int = conexao_contagem.db[nome_colecao].count_documents({})
+
+    #Armaeza a variavel em um DataFrame da biblioteca Pandas
+    df_resultado: pd.DataFrame = pd.DataFrame({f"total_documentos_{nome_colecao}": [total_documentos]})
+
+    #Retorna o DataFrame
+    return df_resultado
 
 def limpar_console(tempo_pausa: int = 3):
     """

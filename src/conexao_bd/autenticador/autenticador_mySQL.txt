@@ -1,1 +1,1 @@
-labdatabase,root,lab@Database2022
+biblioteca_escola,root,12345

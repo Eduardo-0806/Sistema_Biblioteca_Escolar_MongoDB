@@ -1,5 +1,6 @@
-from conexao_bd.mySQL_queries import MySQLQueries
+from conexao_bd.mongoDB_queries import MongoDBQueries
 from entidades.livros import Livros
+import pandas as pd
 
 class ControleLivros:
     """
@@ -10,12 +11,12 @@ class ControleLivros:
 
     def cadastrar_livro(self) -> Livros:
         """
-        Método 'cadastrar_livro' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo registro na tabela 'Livros', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
-        Retorno: Retorna um objeto da classe Livros com os dados do registro cadastrado 
+        Método 'cadastrar_livro' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo documento na colecao 'Livros', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Retorno: Retorna um objeto da classe Livros com os dados do documento cadastrado 
         """
         
         #Cria uma nova conexão
-        conexao_inserir = MySQLQueries(True)
+        conexao_inserir = MongoDBQueries()
         conexao_inserir.connect()
 
         #Solicita ao usuário o id do livro a ser cadastrado
@@ -30,7 +31,7 @@ class ControleLivros:
         id: int = int(id_teste)
 
         #Verifica se o id não está cadastrado na tabela 'Livros'
-        if(not self.pesquisar_id(id)):
+        if(self.pesquisar_id(id)):
 
             #Solicita ao usuário o nome da obra
             nome_obra: str = input("Digite o nome da obra: ").strip()
@@ -68,13 +69,16 @@ class ControleLivros:
             numero_edicao = int(numero_edicao_teste)
 
             #Solicita ao usuário o ano da edição da obra
-            ano_edicao:str = input("Digite o ano de lançamento da edição dessa obra(formato YYYY): ").strip()
+            ano_edicao_teste:str = input("Digite o ano de lançamento da edição dessa obra(formato YYYY): ").strip()
             
             #Garante que o ano passada seja um número e esteja no formato desejado
-            while not ano_edicao.isdecimal()  or (len(ano_edicao) != 4):
+            while not ano_edicao_teste.isdecimal()  or (len(ano_edicao_teste) != 4):
                 print("Erro no ano passado")
-                ano_edicao = input("Digite um ano válido: ").strip()
+                ano_edicao_teste = input("Digite um ano válido: ").strip()
             
+            #Guarda o número em uma variável int após garantir que não haverá problema na conversão de tipo
+            ano_edicao:int = int(ano_edicao_teste)
+
             #Solicita ao usuário a quantidade de exemplares da obra
             quantidade_exemplares_teste: str = input("Insira a quantidade total de exemplares dessa edicao: ").strip()
 
@@ -89,16 +93,20 @@ class ControleLivros:
             #Try-Except para evitar que o ano com valor inválido acabe quebrando o programa
             try:
 
-                #Realiza a inserção do livro na tabela 'Livros' através de código SQL
-                conexao_inserir.write(f"insert into LIVROS values({id}, '{nome_obra}', '{autor}', '{editora_edicao}', {numero_edicao}, {ano_edicao}, {quantidade_exemplares});")
+                #Realiza a inserção do livro na colecao 'Livros' através de código noSQL
 
-                #Guarda os campos do registro inserido em um DataFrame
-                df_resultado = conexao_inserir.execute_query_dataframe(f'select * from LIVROS where id = {id}')
+                conexao_inserir.db["LIVROS"].insert_one({"id": id, "nome_obra": f"{nome_obra}", "autor":f"{autor}",
+                "editora_edicao":f"{editora_edicao}","numero_edicao": numero_edicao, "ano_edicao": ano_edicao,
+                "quantidade_exemplares": quantidade_exemplares})
+
+                #Guarda os campos do documento inserido em um DataFrame
+                df_resultado = pd.DataFrame(conexao_inserir.db["LIVROS"].find({"id": id}))
 
                 #Cria um objeto da classe Livros para guardar os dados do registro
                 livro: Livros = Livros(df_resultado.id.values[0], df_resultado.nome_obra.values[0],
-                df_resultado.autor.values[0], df_resultado.editora_edicao.values[0], df_resultado.numero_edicao.values[0],
-                df_resultado.ano_edicao.values[0], df_resultado.quantidade_exemplares.values[0])
+                df_resultado.autor.values[0], df_resultado.editora_edicao.values[0], 
+                df_resultado.numero_edicao.values[0], df_resultado.ano_edicao.values[0], 
+                df_resultado.quantidade_exemplares.values[0])
 
                 #Informa ao usuário o sucesso da operação e exibe os dados do registro
                 print("Livro cadastrado com sucesso")
@@ -109,7 +117,7 @@ class ControleLivros:
                 #Retorna o objeto para uso futuro, se necessário
                 return livro
 
-            #Em caso de erro, avisa ao usuário sobre a falha de cadastrar o emprestimo e qual erro ocasionou a falha
+            #Em caso de erro, avisa ao usuário sobre a falha de cadastrar o livro e qual erro ocasionou a falha
             except Exception as e:
                 print("Erro ao registrar livro")
                 print(e)
@@ -120,15 +128,15 @@ class ControleLivros:
     
     def alterar_livro(self) -> Livros:
         """
-        Método 'alterar_livro' - Responsável por realizar o processo de atualização dos dados de um registro da tabela 'Livros', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
-        Retorno: Retorna um objeto da classe Livros com os dados do registro atualizado 
+        Método 'alterar_livro' - Responsável por realizar o processo de atualização dos dados de um documento da colecao 'Livros', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Retorno: Retorna um objeto da classe Livros com os dados do cadastro atualizado 
         """
 
         #Cria uma nova conexão
-        conexao_atualizacao = MySQLQueries(True)
+        conexao_atualizacao: MongoDBQueries = MongoDBQueries()
         conexao_atualizacao.connect()
 
-        #Exibe os livros cadastrados na tabela 'Alunos'
+        #Exibe os livros cadastrados na tabela 'Livros'
         print("LIVROS CADASTRADOS")
         print(self.listar_livros())
 
@@ -144,7 +152,7 @@ class ControleLivros:
         id: int = int(id_teste)
 
         #Verifica se o ID passado está cadastrado na tabela 'Livros'
-        if (self.pesquisar_id(id)):
+        if (not self.pesquisar_id(id)):
 
             #Solicita ao usuário novo nome da obra
             nome_obra_novo: str = input("Digite o nome da obra (Novo): ").strip()
@@ -177,16 +185,21 @@ class ControleLivros:
             while not numero_edicao_novo_teste.isdecimal():
                 print("Erro no número digitado")
                 numero_edicao_novo_teste = input("Insira um número de edição válido: ").strip()
+
+            #Guarda o numero da edicao em uma variável int após garantir que não haverá problema na conversão de tipo
             numero_edicao_novo = int(numero_edicao_novo_teste)
 
             #Solicita ao usuário o novo ano da edição
-            ano_edicao_novo:str = input("Digite o novo ano de lançamento da edição dessa obra(formato YYYY): ").strip()
+            ano_edicao_novo_teste:str = input("Digite o novo ano de lançamento da edição dessa obra(formato YYYY): ").strip()
             
             #Garante que a data passada seja um número e esteja no formato necessário
-            while not ano_edicao_novo.isdecimal()  or (len(ano_edicao_novo) != 4):
+            while not ano_edicao_novo_teste.isdecimal()  or (len(ano_edicao_novo_teste) != 4):
                 print("Erro no ano passado")
-                ano_edicao_novo = input("Digite um ano válido: ").strip()
+                ano_edicao_novo_teste = input("Digite um ano válido: ").strip()
             
+            #Guarda o ano da edicao em uma variável int após garantir que não haverá problema na conversão de tipo
+            ano_edicao_novo: int = int(ano_edicao_novo_teste)
+
             #Solicita ao usuário a nova quantidade de exemplares
             quantidade_exemplares_nova_teste: str = input("Insira a nova quantidade total de exemplares dessa edição: ").strip()
 
@@ -194,23 +207,29 @@ class ControleLivros:
             while not quantidade_exemplares_nova_teste.isdecimal():
                 print("Erro no número digitado")
                 quantidade_exemplares_nova_teste = input("Insira um número de exemplares válido: ").strip()
+            
+            #Guarda a quantiade em uma variável int após garantir que não haverá problema na conversão de tipo
             quantidade_exemplares_nova = int(quantidade_exemplares_nova_teste)
 
             #Try-Except para evitar que o ano com valor inválido acabe quebrando o programa
             try:
 
-                #Realiza a atualização do registro na tabela 'Livros' através de código SQL
-                conexao_atualizacao.write(f"update LIVROS set nome_obra = '{nome_obra_novo}', autor = '{autor_novo}', editora_edicao = '{editora_edicao_nova}', numero_edicao = {numero_edicao_novo}, ano_edicao = '{ano_edicao_novo}', quantidade_exemplares = {quantidade_exemplares_nova} where id = {id};")
+                #Realiza a atualização do documento na colecao 'Livros' através de código noSQL
+                conexao_atualizacao.db["LIVROS"].update_many({"id": id}, {"$set": {"nome_obra": f"{nome_obra_novo}", 
+                "autor":f"{autor_novo}", "editora_edicao":f"{editora_edicao_nova}",
+                "numero_edicao": numero_edicao_novo, "ano_edicao": ano_edicao_novo, 
+                "quantidade_exemplares": quantidade_exemplares_nova}})
 
-                #Guarda em um DataFrame os campos do registro atualizado
-                df_resultado = conexao_atualizacao.execute_query_dataframe(f'select * from LIVROS where id = {id}')
+                #Guarda em um DataFrame os campos do documento atualizado
+                df_resultado = pd.DataFrame(conexao_atualizacao.db["LIVROS"].find({"id": id}))
 
-                #Cria um objeto da classe Livros para guardar os dados do registro
+                #Cria um objeto da classe Livros para guardar os dados do documento
                 livro_novo: Livros = Livros(df_resultado.id.values[0], df_resultado.nome_obra.values[0],
-                df_resultado.autor.values[0], df_resultado.editora_edicao.values[0], df_resultado.numero_edicao.values[0],
-                df_resultado.ano_edicao.values[0], df_resultado.quantidade_exemplares.values[0])
+                df_resultado.autor.values[0], df_resultado.editora_edicao.values[0], 
+                df_resultado.numero_edicao.values[0], df_resultado.ano_edicao.values[0], 
+                df_resultado.quantidade_exemplares.values[0])
 
-                #Informa ao usuário o sucesso da operação, exibindo os dados do registro
+                #Informa ao usuário o sucesso da operação, exibindo os dados do documento
                 print("Registro de livro alterado com sucesso")
                 print(livro_novo)
 
@@ -219,7 +238,7 @@ class ControleLivros:
                 #Retorna o objeto para qualquer necessidade futura
                 return livro_novo
 
-            #Em caso de erro, avisa ao usuário sobre a falha de cadastrar o emprestimo e qual erro ocasionou a falha
+            #Em caso de erro, avisa ao usuário sobre a falha de cadastrar o livro e qual erro ocasionou a falha
             except Exception as e:
                 print("Erro ao atualizar registro de livro")
                 print(e)
@@ -230,11 +249,11 @@ class ControleLivros:
 
     def excluir_livro(self):
         """
-        Método 'excluir_livro' - Responsável por realizar o processo de exclusão de um registro da tabela 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido 
+        Método 'excluir_livro' - Responsável por realizar o processo de exclusão de um documento da colecao 'Alunos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido 
         """      
 
         #Cria uma nova conexão
-        conexao_exclusao = MySQLQueries(True)
+        conexao_exclusao: MongoDBQueries = MongoDBQueries()
         conexao_exclusao.connect()
 
         #Exibe os livros cadastrados na tabela 'Alunos'
@@ -252,13 +271,13 @@ class ControleLivros:
         #Guarda o ID em uma variável int após garantir que não haverá problema na conversão de tipo
         id: int = int(id_teste)
 
-        #Verifica se o ID passado está cadastrado na tabela 'Livros'
-        if (self.pesquisar_id(id)):
+        #Verifica se o ID passado está cadastrado na colecao 'Livros'
+        if (not self.pesquisar_id(id)):
 
             #Guarda em um DataFrame o resultado do método pesquisar_id_emprestimo()
             df_id_emprestimos = self.pesquisar_id_emprestimo(id)
 
-            #Verifica se o ID passado está presente em algum emprestimo da tabela 'Emprestimos'
+            #Verifica se o ID passado está presente em algum emprestimo da colecao 'Emprestimos'
             if (len(df_id_emprestimos.index) > 0):
 
                 #Se estiver presente, impede a exclusão do mesmo e mostra ao usuário em quais emprestimos ele participa
@@ -269,7 +288,7 @@ class ControleLivros:
             else:
 
                 #Guarda em um DataFrame os campos do registro a ser excluído
-                df_id_excluido = conexao_exclusao.execute_query_dataframe(f"select * from LIVROS where id = {id}")
+                df_id_excluido = pd.DataFrame(conexao_exclusao.db["LIVROS"].find({"id": id}))
 
                 #Cria um objeto da classe Livros para guardar os dados do registro a ser excluído
                 livro_excluido: Livros = Livros(df_id_excluido.id.values[0], df_id_excluido.nome_obra.values[0],
@@ -287,8 +306,8 @@ class ControleLivros:
                     exclusao:str = input("Digite uma resposta válida(S/N): ").upper()
 
                 if (exclusao == "S"):
-                    #Realiza a exclusao do registro através de comando SQL
-                    conexao_exclusao.write(f"delete from LIVROS where id = {id}")
+                    #Realiza a exclusao do documento através de comando noSQL
+                    conexao_exclusao.db["LIVROS"].delete_many({"id": id})
 
                     #Informa ao usuário o sucesso da operação
                     print("Livro excluido com sucesso")
@@ -301,66 +320,58 @@ class ControleLivros:
     
     def pesquisar_id_emprestimo(self, id:int):
         """
-        Método pesquisar_id_emprestimo - Responsável por realizar uma busca do ID passado nos registros da tabela 'Emprestimos'
+        Método pesquisar_id_emprestimo - Responsável por realizar uma busca do ID passado nos documentos da colecao 'Emprestimos'
         Parâmetros:
-        id - ID que se deseja confirmar a presença nos registros da tabela 'Emprestimos'
-        Retorno: Retorna um DataFrame da biblioteca pandas contendo os registros em que o ID está presente
+        id - ID que se deseja confirmar a presença nos documentos da colecao 'Emprestimos'
+        Retorno: Retorna um DataFrame da biblioteca pandas contendo os documentos em que o ID está presente
         """
 
         #Cria uma nova conexão
-        conexao_verificacao: MySQLQueries = MySQLQueries()
+        conexao_verificacao: MongoDBQueries = MongoDBQueries()
         conexao_verificacao.connect()
 
-        
-        query_verificacao = f"select * from EMPRESTIMOS where codigo_livro = {id}"
+        #Realiza a pesquisa pelo ID do livro na colecao 'EMPRESTIMO', guardando o resultado no DataFrame
+        df_resultado = pd.DataFrame(conexao_verificacao.db["EMPRESTIMOS"].find({}, {"ID": "$id",
+        "Nome da Obra": "$nome_obra", "Autor da Obra": "$autor", "Editora da Edicao": "$editora_edicao",
+        "Numero da Edicao":"$numero_edicao", "Ano da Edicao": "$ano_edicao", 
+        "Quantidade de Exemplares":"$quantidade_exemplares","_id": 0}).sort({"nome_obra": 1, "autor": 1}))
 
-        #Realiza a pesquisa pelo ID na tabela 'Livros', guardando o resultado no DataFrame
-        df_resultado = conexao_verificacao.execute_query_dataframe(query_verificacao)
+        #Retorna o DataFrame
         return df_resultado
     
     def pesquisar_id(self, id: int):
         """
-        Método 'pesquisar_id' - Responsável por pesquisar, na tabela 'Livros', um ID passado para confirmar se já foi cadastrado
+        Método 'pesquisar_id' - Responsável por pesquisar, na colecao 'Livros', um ID passado para confirmar se já foi cadastrado
         Parâmetros:
         id - ID que se deseja confirmar se está cadastrado no banco de dados
         Retorno:
-        True - Caso o ID passado foi encontrado e está cadastrado
-        False - Caso o ID passado não foi encontrado e não está cadastrado
+        True - Caso o ID passado nao foi encontrado e nao está cadastrado
+        False - Caso o ID passado foi encontrado e está cadastrado
         """
         
         #Cria uma nova conexão
-        conexao_verificacao = MySQLQueries()
+        conexao_verificacao: MongoDBQueries = MongoDBQueries()
         conexao_verificacao.connect()
 
-        query_verificacao: string = f"select * from LIVROS where id = {id}"
+        #Realiza a pesquisa pelo ID na colecao 'Livros', guardando o resultado no DataFrame
+        df_resultado = pd.DataFrame(conexao_verificacao.db["LIVROS"].find({"id": id}))
 
-        #Realiza a pesquisa pelo ID na tabela 'Livros', guardando o resultado no DataFrame
-        df_resultado = conexao_verificacao.execute_query_dataframe(query_verificacao)
-
-        #Realiza a contagem de registros no DataFrame, retornando False se não tiver registros, True caso contrário
-        if (len(df_resultado.index) == 0):
-            return False
-        else:
-            return True
+        #Retorna um boolean referente ao DataFrame estar vazio ou nao
+        return df_resultado.empty
 
     def listar_livros(self):
         """
-        Método listar_livros - Responsável por realizar a listagem dos livros cadastrados na tabela 'Livros'
+        Método listar_livros - Responsável por realizar a listagem dos livros cadastrados na colecao 'Livros'
         Retorno: Retorna um DataFrame da biblioteca pandas contendo os livros cadastrados
         """
         #Realiza conexão com o banco de dados
-        conexao_listagem: MySQLQueries = MySQLQueries()
+        conexao_listagem: MongoDBQueries = MongoDBQueries()
         conexao_listagem.connect()
 
-        #Armazena em uma variável o código SQL para listar os livros cadastrados
-        query_verificacao = ("""select id as 'ID',
-                                nome_obra as 'Nome da Obra',
-                                autor as 'Autor da Obra',
-                                editora_edicao as 'Editora da Edicao',
-                                numero_edicao as 'Numero da Edicao',
-                                ano_edicao as 'Ano da Edicao',
-                                quantidade_exemplares as 'Quantidade de Exemplares'
-                                from LIVROS order by nome_obra, autor;""")
+        #Armazena em um dataframe o resultado da pesquisa dos documentos na colecao LIVROS
+        df_listagem: pd.DataFrame = pd.DataFrame(conexao_listagem.db["LIVROS"].find({}, {"ID": "$id", "Nome da Obra": "$nome_obra", 
+        "Autor da Obra": "$autor", "Editora da Edicao":"$editora_edicao", "Numero da Edicao":"$numero_edicao", 
+        "Ano da Edicao": "$ano_edicao", "Quantidade de Exemplares":"$quantidade_exemplares", "_id": 0}).sort({"nome_obra": 1, "autor": 1}))
         
         #Retorna um DataFrame contendo a listagem dos livros cadastrados
-        return conexao_listagem.execute_query_dataframe(query_verificacao)
+        return df_listagem

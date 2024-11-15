@@ -26,10 +26,11 @@ def extrair_inserir_dados():
     for colecao in LISTA_COLECOES:
         df = mySQL_connector.execute_query_dataframe(querie_sql.format(tabela=colecao))
         if (colecao == "EMPRESTIMOS"):
-            df["data_devolucao"] = "2024-02-02"
-            print("Eu")
+            for c in range(len(df)):
+                df.iat[c,3] = df["data_devolucao"][c].strftime("%Y-%m-%d")
         dados = json.loads(df.T.to_json()).values()
         mongoDB_connector.db[colecao].insert_many(dados)
+    
     mongoDB_connector.close()
 
 if __name__ == "__main__":
