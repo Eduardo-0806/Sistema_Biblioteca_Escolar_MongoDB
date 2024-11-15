@@ -36,4 +36,4 @@ def extrair_inserir_dados():
 if __name__ == "__main__":
     criar_colecoes(True)
     extrair_inserir_dados()
-    print("Deu bom")
+    print("Coleções e Documentos criados com sucesso")
