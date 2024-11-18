@@ -11,7 +11,7 @@ class MongoDBQueries:
         self.port = 27017
         self.service_name = 'labdatabase'
 
-        with open("conexao_bd/autenticador/autenticador_mondoDB.txt") as f:
+        with open("conexao_bd/autenticador/autenticador_mongoDB.txt") as f:
             self.usuario, self.senha = f.read().split(",")
     
     def __del__(self):
