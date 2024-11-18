@@ -103,7 +103,7 @@ class Relatorio:
         input("Pressione ENTER para poder sair")
 
     def get_relatorio_alunos_quantidade_emprestimos(self):
-        """Método get_relatorio_alunos_quantidade_emprestimos - Responsável por realizar a consulta ao banco de dados e gerar o relatorio da quantidade emprestimos por aluno"""
+        """Método get_relatorio_alunos_quantidade_emprestimos - Responsável por realizar a consulta ao banco de dados e gerar o relatorio da quantidade de emprestimos por aluno"""
 
         #Cria uma nova conexão com o banco de dados
         conexao_relatorio: MongoDBQueries = MongoDBQueries()

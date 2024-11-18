@@ -1,12 +1,12 @@
 #Constante responsável por armezar o menu_principal do sistema, contendo as operações possíveis
 MENU_PRINCIPAL = """Menu Principal
-1 - Inserir Registros
-2 - Atualizar Registros
-3 - Deletar Registros
+1 - Inserir Documentos
+2 - Atualizar Documentos
+3 - Deletar Documentos
 4 - Gerar Relatórios
 5 - Sair"""
 
-#Constante responsável por armazenar a lista de entidades/tabelas do banco de dados
+#Constante responsável por armazenar a lista de entidades/colecoes do banco de dados
 MENU_ENTIDADES = """Entidades
 1 - Alunos
 2 - Livros

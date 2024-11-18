@@ -3,7 +3,7 @@ from entidades.livros import Livros
 from datetime import date
 
 class Emprestimos:
-    """Classe 'Emprestimo' - Responsável por representar a tabela 'Emprestimos' e seus campos, contendo métodos para editar e retorná-los"""
+    """Classe 'Emprestimo' - Responsável por representar a colecao 'Emprestimos' e seus campos, contendo métodos para editar e retorná-los"""
     def __init__(self, codigo:int, livro:Livros, aluno:Alunos, data_devolucao:date):
         self.codigo = codigo
         self.livro = livro

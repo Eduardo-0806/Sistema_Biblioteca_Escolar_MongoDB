@@ -5,7 +5,7 @@ import pandas as pd
 
 class ControleAlunos:
     """
-    Classe 'ControleAlunos' - Responsável por controlar as alterações(Inserção, alterção e exclusão de registros) da tabela 'Alunos' do sistema por meio de comandos DML
+    Classe 'ControleAlunos' - Responsável por controlar as alterações(Inserção, alterção e exclusão de registros) da colecao 'Alunos' do sistema por meio de comandos NoSQL
     """
     def __init__(self):
         pass
@@ -86,7 +86,7 @@ class ControleAlunos:
         conexao_atualizacao: MongoDBQueries = MongoDBQueries()
         conexao_atualizacao.connect()
 
-        #Exibe os alunos cadastrados na tabela 'Alunos'
+        #Exibe os alunos cadastrados na colecao 'Alunos'
         print("ALUNOS CADASTRADOS")
         print(self.listar_alunos())
 
@@ -129,7 +129,7 @@ class ControleAlunos:
             #Salva os dados do aluno em um objeto da classe Alunos
             aluno_atualizado = Alunos(df_resultado.matricula.values[0], df_resultado.nome.values[0],df_resultado.email.values[0])
 
-            #Sinaliza ao usuário o sucesso da operação, retornando também os dados do registro atualizado
+            #Sinaliza ao usuário o sucesso da operação, retornando também os dados do documento atualizado
             print("Registro do aluno atualizado com sucesso!")
             print(aluno_atualizado)
             
@@ -150,7 +150,7 @@ class ControleAlunos:
         conexao_exclusao:MongoDBQueries = MongoDBQueries()
         conexao_exclusao.connect()
 
-        #Exibe os alunos cadastrados na tabela 'Alunos'
+        #Exibe os alunos cadastrados na colecao 'Alunos'
         print("ALUNOS CADASTRADOS")
         print(self.listar_alunos())
 
@@ -171,7 +171,7 @@ class ControleAlunos:
             #Guarda em um DataFrame o resultado do método pesquisar_matricula_emprestimo()
             df_matricula_emprestimos = self.pesquisar_matricula_emprestimo(matricula)
 
-            #Verifica se a matrícula passada está presente em algum emprestimo da tabela 'Emprestimos'
+            #Verifica se a matrícula passada está presente em algum emprestimo da colecao 'Emprestimos'
             if (len(df_matricula_emprestimos.index) > 0):
 
                 #Se estiver presente, impede a exclusão da mesma e mostra ao usuário em quais emprestimos ela participa
@@ -184,7 +184,7 @@ class ControleAlunos:
                 #Caso não esteja, procede para sua exclusão guardando seus dados em um data frame
                 df_matricula_excluida = pd.DataFrame(conexao_exclusao.db["ALUNOS"].find({"matricula": matricula}))
 
-                #Cria um objeto da classe Alunos com dados do registro a ser excluído
+                #Cria um objeto da classe Alunos com dados do documento a ser excluído
                 aluno_excluido: Alunos = Alunos(df_matricula_excluida.matricula.values[0], 
                 df_matricula_excluida.nome.values[0], df_matricula_excluida.email.values[0])
 
@@ -192,7 +192,7 @@ class ControleAlunos:
                 print(aluno_excluido)
 
                 #Solicita ao usuário a confirmação para exclusão
-                exclusao:str = input("Deseja excluir esse registro do aluno(S/N)? ").upper()
+                exclusao:str = input("Deseja excluir esse documento do aluno(S/N)? ").upper()
 
                 #Garante que a resposta seja um valor valido
                 while(exclusao != "S" and exclusao != "N"):

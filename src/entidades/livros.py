@@ -1,5 +1,5 @@
 class Livros:
-    """Classe 'Livros' - Responsável por representar a tabela 'Livros' e seus campos, contendo métodos para editar e retorná-los"""
+    """Classe 'Livros' - Responsável por representar a colecao 'Livros' e seus campos, contendo métodos para editar e retorná-los"""
     def __init__(self, id:int, nome_obra:str, autor:str, editora_edicao:str, numero_edicao:int,ano_edicao:int, quantidade_exemplares:int):
         self.id = id
         self.nome_obra = nome_obra

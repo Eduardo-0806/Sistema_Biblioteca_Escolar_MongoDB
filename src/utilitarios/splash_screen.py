@@ -39,7 +39,7 @@ class SplashScreen:
         ************************************************************
         *               SISTEMA DE BIBLIOTECA ESCOLAR
         *
-        *   TOTAL DE REGISTROS:
+        *   TOTAL DE DOCUMENTOS:
         *       1 - LIVROS: {self.get_total_documentos('LIVROS')}
         *       2 - ALUNOS: {self.get_total_documentos("ALUNOS")}
         *       3 - EMPRESTIMOS: {self.get_total_documentos("EMPRESTIMOS")}

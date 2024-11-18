@@ -52,22 +52,23 @@ def exibir_relatorio(opcao_relatorio: int = 0):
     else:
         print("Opção digitada não é válida")
 
-def inserir_registro(opcao_inserir: int = 0):
+def inserir_documento(opcao_inserir: int = 0):
     """
-    Função inserir_registro - Responsável por controlar a inserção de registros conforme a opção escolhida pelo usuário
+    Função inserir_documento - Responsável por controlar a inserção de documentos conforme a opção escolhida 
+    pelo usuário
     Parâmetros:
     opcao_inserir - Opção de inserção escolhida pelo usuário
     """
 
-    #Inserção de regisro na tabela Alunos
+    #Insercao de documento na colecao Alunos
     if opcao_inserir == 1:
         controlador_aluno.cadastrar_aluno()
 
-    #Inserção de regisro na tabela Livros
+    #Insercao de documento na colecao Livros
     elif opcao_inserir == 2:
         controlador_livro.cadastrar_livro()
 
-    #Inserção de regisro na tabela Emprestimos
+    #Insercao de documento na colecao Emprestimos
     elif opcao_inserir == 3:
         controlador_emprestimo.cadastrar_emprestimo()
 
@@ -75,22 +76,22 @@ def inserir_registro(opcao_inserir: int = 0):
     else:
         print("Opção digitada não é válida")
 
-def alterar_registro(opcao_alterar: int = 0):
+def alterar_documento(opcao_alterar: int = 0):
     """
-    Função alterar_registro - Responsável por controlar a alteração de registros conforme a opção escolhida pelo usuário
+    Função alterar_documento - Responsável por controlar a alteração de documentos conforme a opção escolhida pelo usuário
     Parâmetros:
     opcao_alterar - Opção de alteração escolhida pelo usuário
     """
 
-    #Alteração de regisro na tabela Alunos
+    #Alteracao de documento na colecao Alunos
     if opcao_alterar == 1:
         controlador_aluno.alterar_aluno()
     
-    #Alteração de regisro na tabela Livros
+    #Alteracao de documento na colecao Livros
     elif opcao_alterar == 2:
         controlador_livro.alterar_livro()
 
-    #Alteração de regisro na tabela Emprestimos
+    #Alteracao de documento na colecao Emprestimos
     elif opcao_alterar == 3:
         controlador_emprestimo.alterar_emprestimo()
 
@@ -98,22 +99,23 @@ def alterar_registro(opcao_alterar: int = 0):
     else:
         print("Opção digitada não é válida")
 
-def excluir_registro(opcao_excluir: int = 0):
+def excluir_documento(opcao_excluir: int = 0):
     """
-    Função excluir_registro - Responsável por controlar a exclusão de registros conforme a opção escolhida pelo usuário
+    Função excluir_documento - Responsável por controlar a exclusão de documentos conforme a opção escolhida 
+    pelo usuário
     Parâmetros:
     opcao_excluir - Opção de exclusão escolhida pelo usuário
     """
 
-    #Exclusão de regisro na tabela Alunos
+    #Exclusão de documento na colecao Alunos
     if opcao_excluir == 1:
         controlador_aluno.excluir_aluno()
 
-    #Exclusão de regisro na tabela Livros
+    #Exclusão de documento na colecao Livros
     elif opcao_excluir == 2:
         controlador_livro.excluir_livro()
     
-    #Exclusão de regisro na tabela Emprestimos
+    #Exclusão de documento na colecao Emprestimos
     elif opcao_excluir == 3:
         controlador_emprestimo.excluir_emprestimo()
 
@@ -148,18 +150,18 @@ def run():
         opcao_menu_principal = int(opcao_menu_principal_teste)
         menus.limpar_console(1)
 
-        #Inserir Registros
+        #Inserir documento
         if opcao_menu_principal == 1:
             continuar: str = "S"
 
-            #Garante o usuário estará no menu inserção de registros até escolher a opção de sair
+            #Garante o usuário estará no menu inserção de documentos até escolher a opção de sair
             while (continuar == "S"):
 
                 #Exibe o menu de entidades
                 print(menus.MENU_ENTIDADES)
 
                 #Solicita ao usuário a opção de entidade
-                opcao_inserir_teste = input("Digite a opção de tabela para inserir um registro: ")
+                opcao_inserir_teste = input("Digite a opção de colecao para inserir um documento: ")
                 
                 #Garante que o valor passado seja um número
                 while (not opcao_inserir_teste.isdecimal()):
@@ -170,15 +172,15 @@ def run():
                 opcao_inserir: str = int(opcao_inserir_teste)
                 menus.limpar_console(1)
 
-                #Tenta realizar o processo de inserção de registro na tabela desejada
-                inserir_registro(opcao_inserir)
+                #Tenta realizar o processo de inserção de documento na colecao desejada
+                inserir_documento(opcao_inserir)
                 menus.limpar_console(2)
 
                 #Exibe a tela inicial após a operação realizada
                 print(tela_inicial.tela_inicial())
                 menus.limpar_console(2)
 
-                #Solicita ao usuário se deseja continuar inserindo registros
+                #Solicita ao usuário se deseja continuar inserindo documento
                 continuar = input("Deseja continuar criando registros(S/N)? ").upper()
 
                 #Garante que a resposta esteja dentro dos valores esperados
@@ -190,18 +192,18 @@ def run():
                     print("Saindo do menu de inserção")
                 menus.limpar_console(1)
         
-        #Alterar registro
+        #Alterar documento
         elif opcao_menu_principal == 2:
             continuar: str = "S"
 
-            #Garante o usuário estará no menu de alteração de registros até escolher a opção de sair
+            #Garante o usuário estará no menu de alteração de documento até escolher a opção de sair
             while (continuar == "S"):
 
                 #Exibe o menu de entidades
                 print(menus.MENU_ENTIDADES)
 
                 #Solicita ao usuário a opção de entidade
-                opcao_atualizar_teste = input("Digite a opção de tabela para atualizar um registro: ")
+                opcao_atualizar_teste = input("Digite a opção de colecao para atualizar um documento: ")
                 
                 #Garante que o valor passado seja um número
                 while (not opcao_atualizar_teste.isdecimal()):
@@ -212,16 +214,16 @@ def run():
                 opcao_atualizar: int = int(opcao_atualizar_teste)
                 menus.limpar_console(1)
 
-                #Tenta realizar o processo de alteração de registro na tabela desejada
-                alterar_registro(opcao_atualizar)
+                #Tenta realizar o processo de alteração de documento na colecao desejada
+                alterar_documento(opcao_atualizar)
                 menus.limpar_console(2)
 
                 #Exibe a tela inicial após a operação realizada
                 print(tela_inicial.tela_inicial())
                 menus.limpar_console(2)
 
-                #Solicita ao usuário se deseja continuar atualizando registros
-                continuar = input("Deseja continuar atualizando registros(S/N)? ").upper()
+                #Solicita ao usuário se deseja continuar atualizando documentos
+                continuar = input("Deseja continuar atualizando docmentos(S/N)? ").upper()
 
                 #Garante que a resposta esteja dentro dos valores esperados
                 while(continuar != "S" and continuar != "N"):
@@ -232,18 +234,18 @@ def run():
                     print("Saindo do menu de atualização")
                 menus.limpar_console(1)
 
-        #Excluir registro
+        #Excluir documento
         elif opcao_menu_principal == 3:
             continuar: str = "S"
 
-            #Garante o usuário estará no menu de exclusão de registros até escolher a opção de sair
+            #Garante o usuário estará no menu de exclusão de documentos até escolher a opção de sair
             while (continuar == "S"):
 
                 #Exibe o menu de entidades
                 print(menus.MENU_ENTIDADES)
 
                 #Solicita ao usuário a opção de entidade
-                opcao_excluir_teste = input("Digite a opção de tabela para excluir um registro: ")
+                opcao_excluir_teste = input("Digite a opção de colecao para excluir um documentos: ")
                 
                 #Garante que o valor passado seja um número
                 while (not opcao_excluir_teste.isdecimal()):
@@ -254,15 +256,15 @@ def run():
                 opcao_excluir: int = int(opcao_excluir_teste)
                 menus.limpar_console(1)
 
-                #Tenta realizar o processo de exclusão de registro na tabela desejada
-                excluir_registro(opcao_excluir)
+                #Tenta realizar o processo de exclusão de documento na colecao desejada
+                excluir_documento(opcao_excluir)
                 menus.limpar_console(2)
 
                 #Exibe a tela inicial após a operação realizada
                 print(tela_inicial.tela_inicial())
                 menus.limpar_console(2)
 
-                continuar = input("Deseja continuar excluindo registros(S/N)? ").upper()
+                continuar = input("Deseja continuar excluindo documentos(S/N)? ").upper()
                 while(continuar != "S" and continuar != "N"):
                     continuar = input("Digite uma resposta válida(S ou N): ").upper()
 

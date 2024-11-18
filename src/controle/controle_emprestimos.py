@@ -11,7 +11,7 @@ import pandas as pd
 
 class ControleEmprestimos:
     """
-    Classe 'ControleEmprestimos' - Responsável por controlar as alterações(Inserção, alterção e exclusão de registros) da tabela 'Emprestimos' do sistema por meio de comandos DML
+    Classe 'ControleEmprestimos' - Responsável por controlar as alterações(Inserção, alterção e exclusão de registros) da colecao 'Emprestimos' do sistema por meio de comandos NoSQL
     """
     def __init__(self):
         self.controlador_livros = ControleLivros()
@@ -20,7 +20,7 @@ class ControleEmprestimos:
     
     def cadastrar_emprestimo(self) -> Emprestimos:
         """
-        Método 'cadastrar_emprestimo' - Responsável por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo documento na colecao 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
+        Método 'cadastrar_emprestimo' - Responsavel por realizar o processo de preenchimento dos campos necessários e posteriomente a inserção de um novo documento na colecao 'Emprestimos', valida as respostas do usuário para os campos não serem preenchidos com um valor inválido
         Retorno: Retorna um objeto da classe Emprestimo com os dados do documento criado 
         """
         #Cria uma nova conexão
@@ -44,7 +44,7 @@ class ControleEmprestimos:
             #Cria uma variavel flag para controlar o preenchimento do campos
             flag: bool = False
 
-            #Exibe para o usuário os livros cadastrados na tabela 'Livros'
+            #Exibe para o usuário os livros cadastrados na colecao 'Livros'
             print("LIVROS CADASTRADOS")
             print(self.controlador_livros.listar_livros())
 
@@ -83,7 +83,7 @@ class ControleEmprestimos:
             #Cria uma variavel flag para controlar o preenchimento do campos
             flag = False
 
-            #Exibe para o usuário os alunos cadastrados na tabela 'Alunos'
+            #Exibe para o usuário os alunos cadastrados na colecao 'Alunos'
             print("ALUNOS CADASTRADOS")
             print(self.controlador_alunos.listar_alunos())
 
@@ -167,7 +167,7 @@ class ControleEmprestimos:
         conexao_alteracao = MongoDBQueries()
         conexao_alteracao.connect()
 
-        #Exibe para o usuário os emprestimos cadastrados na tabela 'Emprestimos'
+        #Exibe para o usuário os emprestimos cadastrados na colecao 'Emprestimos'
         print("EMPRESTIMOS CADASTRADOS")
         print(self.listar_emprestimos())
         
@@ -182,13 +182,13 @@ class ControleEmprestimos:
         #Guarda o código em uma variável int após garantir que não haverá problema na conversão de tipo
         codigo: int = int(codigo_teste)
 
-        #Verifica se o codigo passado já está cadastrado na tabela 'Emprestimos'
+        #Verifica se o codigo passado já está cadastrado na colecao 'Emprestimos'
         if (not self.pesquisar_codigo(codigo)):
 
             #Cria uma variavel flag para controlar o preenchimento do campos
             flag: bool = False
 
-            #Exibe para o usuário os livros cadastrados na tabela 'Livros'
+            #Exibe para o usuário os livros cadastrados na colecao 'Livros'
             print("LIVROS CADASTRADOS")
             print(self.controlador_livros.listar_livros())
 
@@ -206,7 +206,7 @@ class ControleEmprestimos:
                 #Guarda o resultado do método pesquisar_id na variável flag
                 flag = not self.controlador_livros.pesquisar_id(int(codigo_livro_novo_teste))
                 
-                #Informa ao usuário se o codigo passado não estiver cadastrado na tabela 'Livros'
+                #Informa ao usuário se o codigo passado não estiver cadastrado na colecao 'Livros'
                 if (not flag):
                     print("Código de livro passado não está cadastrado no sistema")
                 else:
@@ -226,7 +226,7 @@ class ControleEmprestimos:
             
             flag = False
 
-            #Exibe para o usuário os alunos cadastrados na tabela 'Alunos'
+            #Exibe para o usuário os alunos cadastrados na colecao 'Alunos'
             print("ALUNOS CADASTRADOS")
             print(self.controlador_alunos.listar_alunos())
 
@@ -245,7 +245,7 @@ class ControleEmprestimos:
                 #Guarda na variável flag o resultado do método pesquisar_matricula
                 flag = not self.controlador_alunos.pesquisar_matricula(int(codigo_aluno_novo_teste))
 
-                #Informa ao usuário se a matrícula não estiver cadastrada na tabela 'Alunos'
+                #Informa ao usuário se a matrícula não estiver cadastrada na colecao 'Alunos'
                 if (not flag):
                     print("Matrícula passada não está cadastrada no sistema")
                 else:
@@ -326,24 +326,26 @@ class ControleEmprestimos:
         #Guarda o código em uma variável int após garantir que não haverá problema na conversão de tipo
         codigo: int = int(codigo_teste)
 
-        #Verifica se o código passado está cadastrado na tabela 'Emprestimos'
+        #Verifica se o código passado está cadastrado na colecao 'Emprestimos'
         if (not self.pesquisar_codigo(codigo)):
 
                 #Guarda em um DataFrame os campos do documento a ser excluído
                 df_codigo_excluido = pd.DataFrame(conexao_exclusao.db["EMPRESTIMOS"].find({"codigo": codigo}))
                 print(df_codigo_excluido.codigo_livro.values[0])
+
                 #Cria respectivamente objetos da classe Livros, Alunos e date
                 livro: Livros = self.criar_livro(df_codigo_excluido.codigo_livro.values[0])
                 aluno: Alunos = self.criar_aluno(df_codigo_excluido.codigo_aluno.values[0])
+
                 elementos_data: list = df_codigo_excluido.data_devolucao.values[0].split("-")
                 data: date = date(int(elementos_data[0]), int(elementos_data[1]), int(elementos_data[2]))
 
-                #Guarda em um objeto da classe Emprestimos os dados do regdcoumentoistro a ser excluído
+                #Guarda em um objeto da classe Emprestimos os dados do documento a ser excluído
                 emprestimo_excluido: Emprestimos = Emprestimos(df_codigo_excluido.codigo.values[0], livro, aluno, data)
                 print(emprestimo_excluido)
 
                 #Solicita ao usuário a confirmação para exclusão
-                exclusao:str = input("Deseja excluir esse registro do Emprestimo(S/N)? ").upper()
+                exclusao:str = input("Deseja excluir esse documento do Emprestimo(S/N)? ").upper()
 
                 #Garante que a resposta seja um valor valido
                 while(exclusao != "S" and exclusao != "N"):
@@ -386,7 +388,7 @@ class ControleEmprestimos:
 
     def pesquisar_disponibilidade(self, codigo:int) -> bool:
         """
-        Método 'pesquisar_disponibilidade' - Responsável por pesquisar, na tabela 'Livros', a quantidade de exemplares do código de livro passado
+        Método 'pesquisar_disponibilidade' - Responsável por pesquisar, na colecao 'Livros', a quantidade de exemplares do código de livro passado
         Parâmetros:
         codigo - Código do livro que se deseja confirmar a quantidade de exemplares em estoque
         Retorno:

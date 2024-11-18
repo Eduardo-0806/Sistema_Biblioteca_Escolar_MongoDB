@@ -1,5 +1,5 @@
 class Alunos:
-    """Classe 'Alunos' - Responsável por representar a tabela 'Alunos' e seus campos, contendo métodos para editar e retorná-los"""
+    """Classe 'Alunos' - Responsável por representar a colecao 'Alunos' e seus campos, contendo métodos para editar e retorná-los"""
     def __init__(self, matricula:str, nome:str, email:str):
         self.matricula = matricula
         self.nome = nome
